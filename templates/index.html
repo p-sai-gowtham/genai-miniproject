@@ -1,0 +1,594 @@
+{% extends "base.html" %}
+{% load static %}
+
+
+{% block css %}
+
+
+{% endblock css %}
+
+{% block content %}
+<div class="container">
+    <h1>PDF & URL Chat Assistant</h1>
+
+    <!-- Input Type Tabs -->
+    <div class="input-tabs">
+        <div class="input-tab active" data-tab="pdf-tab">PDF Upload</div>
+        <div class="input-tab" data-tab="url-tab">URL Input</div>
+        <div class="input-tab" data-tab="both-tab">Both</div>
+    </div>
+
+    <!-- PDF Upload Tab -->
+    <div id="pdf-tab" class="tab-content active">
+        <!-- PDF Upload Area -->
+        <div id="uploadArea" class="upload-area">
+            <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            <p class="upload-text">Drag and drop your PDFs here</p>
+            <p class="upload-subtext">or click to browse files</p>
+            <button id="uploadBtn" class="btn">Upload PDFs</button>
+            <input type="file" id="fileInput" accept="application/pdf" multiple class="hidden">
+        </div>
+    </div>
+
+    <!-- URL Input Tab -->
+    <div id="url-tab" class="tab-content">
+        <div class="url-container">
+            <h2>Enter URLs</h2>
+            <form id="urlForm" class="url-form">
+                <input type="url" id="urlInput" class="url-input" placeholder="Enter a URL (webpage or PDF link)">
+                <button type="submit" class="btn">Add URL</button>
+            </form>
+            <div id="urlList" class="url-list"></div>
+        </div>
+    </div>
+
+    <!-- Both Tab -->
+    <div id="both-tab" class="tab-content">
+        <!-- PDF Upload Area -->
+        <div id="uploadAreaBoth" class="upload-area">
+            <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            <p class="upload-text">Drag and drop your PDFs here</p>
+            <p class="upload-subtext">or click to browse files</p>
+            <button id="uploadBtnBoth" class="btn">Upload PDFs</button>
+            <input type="file" id="fileInputBoth" accept="application/pdf" multiple class="hidden">
+        </div>
+
+        <!-- URL Input -->
+        <div class="url-container">
+            <h2>Enter URLs</h2>
+            <form id="urlFormBoth" class="url-form">
+                <input type="url" id="urlInputBoth" class="url-input" placeholder="Enter a URL (webpage or PDF link)">
+                <button type="submit" class="btn">Add URL</button>
+            </form>
+            <div id="urlListBoth" class="url-list"></div>
+        </div>
+    </div>
+
+    <!-- Source Summary -->
+    <div id="sourceContainer" class="hidden" style="margin-bottom: 2rem;">
+        <h2>Your Sources</h2>
+        <div class="source-list" id="sourceList"></div>
+    </div>
+
+    <!-- PDF List and Viewer -->
+    <div id="pdfContainer" class="pdf-container hidden">
+        <div class="pdf-header">
+            <h2>Uploaded PDFs</h2>
+            <button id="addMoreBtn" class="btn btn-outline">Add More PDFs</button>
+        </div>
+
+        <div id="pdfTabs" class="pdf-tabs"></div>
+
+        <iframe id="pdfViewer" class="pdf-viewer"></iframe>
+    </div>
+
+    <!-- Chat Messages -->
+    <div id="chatContainer" class="chat-container hidden">
+        <h2>Conversation</h2>
+        <div id="messagesContainer"></div>
+    </div>
+
+    <!-- Input Form -->
+    <form id="questionForm" class="input-form">
+        <input type="text" id="questionInput" class="input-field"
+            placeholder="Ask a question about your PDFs and URLs..." disabled>
+        <button type="submit" id="submitBtn" class="btn" disabled>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+        </button>
+    </form>
+    <p id="inputHint" class="input-hint">Add PDFs or URLs to start asking questions</p>
+</div>
+{% endblock content %}
+
+{% block js %}
+<script>
+    // DOM Elemen
+    const inputTabs = document.querySelectorAll('.input-tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const uploadBtn = document.getElementById('uploadBtn');
+
+    const uploadAreaBoth = document.getElementById('uploadAreaBoth');
+    const fileInputBoth = document.getElementById('fileInputBoth');
+    const uploadBtnBoth = document.getElementById('uploadBtnBoth');
+
+    const urlForm = document.getElementById('urlForm');
+    const urlInput = document.getElementById('urlInput');
+    const urlList = document.getElementById('urlList');
+
+    const urlFormBoth = document.getElementById('urlFormBoth');
+    const urlInputBoth = document.getElementById('urlInputBoth');
+    const urlListBoth = document.getElementById('urlListBoth');
+
+    const sourceContainer = document.getElementById('sourceContainer');
+    const sourceList = document.getElementById('sourceList');
+
+    const addMoreBtn = document.getElementById('addMoreBtn');
+    const pdfContainer = document.getElementById('pdfContainer');
+    const pdfTabs = document.getElementById('pdfTabs');
+    const pdfViewer = document.getElementById('pdfViewer');
+
+    const chatContainer = document.getElementById('chatContainer');
+    const messagesContainer = document.getElementById('messagesContainer');
+
+    const questionForm = document.getElementById('questionForm');
+    const questionInput = document.getElementById('questionInput');
+    const submitBtn = document.getElementById('submitBtn');
+    const inputHint = document.getElementById('inputHint');
+
+    // State
+    let pdfs = [];
+    let urls = [];
+    let activePdf = null;
+    let isLoading = false;
+
+    // Event Listeners for Tabs
+    inputTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Remove active class from all tabs and contents
+            inputTabs.forEach(t => t.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+
+            // Add active class to clicked tab and corresponding content
+            tab.classList.add('active');
+            const tabId = tab.getAttribute('data-tab');
+            document.getElementById(tabId).classList.add('active');
+        });
+    });
+
+    // Event Listeners for PDF Upload
+    uploadBtn.addEventListener('click', () => fileInput.click());
+    uploadBtnBoth.addEventListener('click', () => fileInputBoth.click());
+    addMoreBtn.addEventListener('click', () => {
+        // Determine which file input to use based on active tab
+        const activeTab = document.querySelector('.input-tab.active').getAttribute('data-tab');
+        if (activeTab === 'pdf-tab') {
+            fileInput.click();
+        } else if (activeTab === 'both-tab') {
+            fileInputBoth.click();
+        }
+    });
+
+    uploadArea.addEventListener('click', () => fileInput.click());
+    uploadArea.addEventListener('dragover', handleDragOver);
+    uploadArea.addEventListener('drop', handleDrop);
+
+    uploadAreaBoth.addEventListener('click', () => fileInputBoth.click());
+    uploadAreaBoth.addEventListener('dragover', handleDragOver);
+    uploadAreaBoth.addEventListener('drop', handleDrop);
+
+    fileInput.addEventListener('change', handleFileChange);
+    fileInputBoth.addEventListener('change', handleFileChange);
+
+    // Event Listeners for URL Input
+    urlForm.addEventListener('submit', handleUrlSubmit);
+    urlFormBoth.addEventListener('submit', handleUrlSubmit);
+
+    // Event Listener for Question Form
+    questionForm.addEventListener('submit', handleSubmit);
+
+    // Functions for Tabs
+    function setActiveTab(tabId) {
+        inputTabs.forEach(tab => {
+            if (tab.getAttribute('data-tab') === tabId) {
+                tab.classList.add('active');
+            } else {
+                tab.classList.remove('active');
+            }
+        });
+
+        tabContents.forEach(content => {
+            if (content.id === tabId) {
+                content.classList.add('active');
+            } else {
+                content.classList.remove('active');
+            }
+        });
+    }
+
+    // Functions for PDF Upload
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.currentTarget.style.backgroundColor = '#f3f4f6';
+    }
+
+    function handleDragLeave(e) {
+        e.currentTarget.style.backgroundColor = '';
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        e.currentTarget.style.backgroundColor = '';
+
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            const newFiles = Array.from(e.dataTransfer.files).filter(
+                file => file.type === 'application/pdf'
+            );
+
+            if (newFiles.length > 0) {
+                addPdfs(newFiles);
+            }
+        }
+    }
+
+    function handleFileChange(e) {
+        if (e.target.files && e.target.files.length > 0) {
+            const newFiles = Array.from(e.target.files).filter(
+                file => file.type === 'application/pdf'
+            );
+
+            if (newFiles.length > 0) {
+                addPdfs(newFiles);
+            }
+        }
+    }
+
+    function addPdfs(newFiles) {
+        pdfs = [...pdfs, ...newFiles];
+        updateUI();
+        updateSourceList();
+
+        if (!activePdf && pdfs.length > 0) {
+            setActivePdf(pdfs[0]);
+        }
+    }
+
+    // Functions for URL Input
+    function handleUrlSubmit(e) {
+        e.preventDefault();
+
+        // Determine which input to use based on the form that was submitted
+        const input = e.target === urlForm ? urlInput : urlInputBoth;
+
+        const url = input.value.trim();
+        if (url && isValidUrl(url)) {
+            addUrl(url);
+            input.value = '';
+        } else {
+            alert('Please enter a valid URL');
+        }
+    }
+
+    function isValidUrl(string) {
+        try {
+            new URL(string);
+            return true;
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function addUrl(url) {
+        if (!urls.includes(url)) {
+            urls.push(url);
+            updateUI();
+            updateSourceList();
+            renderUrlLists();
+        }
+    }
+
+    function removeUrl(url) {
+        urls = urls.filter(u => u !== url);
+        updateUI();
+        updateSourceList();
+        renderUrlLists();
+    }
+
+    function renderUrlLists() {
+        // Clear both URL lists
+        urlList.innerHTML = '';
+        urlListBoth.innerHTML = '';
+
+        // Render URLs in both lists
+        urls.forEach(url => {
+            const urlItem = createUrlItem(url);
+            const urlItemClone = urlItem.cloneNode(true);
+
+            // Add event listener to the remove button in both lists
+            urlItem.querySelector('.remove-btn').addEventListener('click', () => removeUrl(url));
+            urlItemClone.querySelector('.remove-btn').addEventListener('click', () => removeUrl(url));
+
+            urlList.appendChild(urlItem);
+            urlListBoth.appendChild(urlItemClone);
+        });
+    }
+
+    function createUrlItem(url) {
+        const urlItem = document.createElement('div');
+        urlItem.className = 'url-item';
+
+        const displayUrl = url.length > 50 ? url.substring(0, 50) + '...' : url;
+
+        urlItem.innerHTML = `
+                <span class="url-item-text" title="${url}">${displayUrl}</span>
+                <div class="url-item-actions">
+                    <button class="remove-btn" title="Remove URL">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+            `;
+
+        return urlItem;
+    }
+
+    // Functions for PDF Viewer
+    function updateUI() {
+        const hasContent = pdfs.length > 0 || urls.length > 0;
+
+        if (pdfs.length > 0) {
+            pdfContainer.classList.remove('hidden');
+            renderPdfTabs();
+        } else {
+            pdfContainer.classList.add('hidden');
+        }
+
+        if (hasContent) {
+            questionInput.disabled = false;
+            submitBtn.disabled = false;
+            inputHint.classList.add('hidden');
+        } else {
+            questionInput.disabled = true;
+            submitBtn.disabled = true;
+            inputHint.classList.remove('hidden');
+            chatContainer.classList.add('hidden');
+        }
+    }
+
+    function updateSourceList() {
+        if (pdfs.length > 0 || urls.length > 0) {
+            sourceContainer.classList.remove('hidden');
+            renderSourceList();
+        } else {
+            sourceContainer.classList.add('hidden');
+        }
+    }
+
+    function renderSourceList() {
+        sourceList.innerHTML = '';
+
+        if (pdfs.length > 0) {
+            const pdfBadge = document.createElement('div');
+            pdfBadge.className = 'source-item';
+            pdfBadge.innerHTML = `
+                    <svg class="source-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    PDFs <span class="badge-count">${pdfs.length}</span>
+                `;
+            sourceList.appendChild(pdfBadge);
+        }
+
+        if (urls.length > 0) {
+            const urlBadge = document.createElement('div');
+            urlBadge.className = 'source-item';
+            urlBadge.innerHTML = `
+                    <svg class="source-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                    </svg>
+                    URLs <span class="badge-count">${urls.length}</span>
+                `;
+            sourceList.appendChild(urlBadge);
+        }
+    }
+
+    function renderPdfTabs() {
+        pdfTabs.innerHTML = '';
+
+        pdfs.forEach(pdf => {
+            const tab = document.createElement('div');
+            tab.className = `pdf-tab ${activePdf === pdf ? 'active' : ''}`;
+
+            const name = pdf.name.length > 20 ? `${pdf.name.substring(0, 20)}...` : pdf.name;
+            tab.innerHTML = `
+                    <span>${name}</span>
+                    <button class="remove-btn" data-name="${pdf.name}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                `;
+
+            tab.addEventListener('click', (e) => {
+                if (!e.target.closest('.remove-btn')) {
+                    setActivePdf(pdf);
+                }
+            });
+
+            pdfTabs.appendChild(tab);
+        });
+
+        // Add event listeners to remove buttons
+        document.querySelectorAll('.remove-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const name = btn.getAttribute('data-name');
+                if (name) {
+                    removePdf(name);
+                }
+            });
+        });
+    }
+
+    function setActivePdf(pdf) {
+        activePdf = pdf;
+        renderPdfTabs();
+        pdfViewer.src = URL.createObjectURL(pdf);
+    }
+
+    function removePdf(name) {
+        const index = pdfs.findIndex(pdf => pdf.name === name);
+
+        if (index !== -1) {
+            pdfs.splice(index, 1);
+
+            if (activePdf && activePdf.name === name) {
+                activePdf = pdfs.length > 0 ? pdfs[0] : null;
+            }
+
+            updateUI();
+            updateSourceList();
+
+            if (activePdf) {
+                setActivePdf(activePdf);
+            }
+        }
+    }
+
+    async function handleSubmit(e) {
+        e.preventDefault();
+
+        // Only proceed if there is at least one PDF or URL and a non-empty question.
+        if ((pdfs.length === 0 && urls.length === 0) || !questionInput.value.trim() || isLoading) {
+            return;
+        }
+
+        const question = questionInput.value.trim();
+
+        // Create a message with attachments info (for UI purposes)
+        const attachments = {
+            pdfs: pdfs.map(pdf => pdf.name),
+            urls: urls
+        };
+
+        addMessage('user', question, attachments);
+
+        // Reset the question input and update UI state
+        questionInput.value = '';
+        isLoading = true;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<div class="loading"></div>';
+        questionInput.disabled = true;
+
+        // Create FormData to send PDFs, URLs, and question to the backend
+        const formData = new FormData();
+        formData.append("question", question);
+
+        // Append each PDF file with a unique key
+        pdfs.forEach((pdf, index) => {
+            formData.append(`pdf_${index}`, pdf, pdf.name);
+        });
+
+        // Append each URL as text with a unique key
+        urls.forEach((url, index) => {
+            formData.append(`url_${index}`, url);
+        });
+
+        // Get CSRF token for Django
+
+        try {
+            const response = await fetch('http://127.0.0.1:8000/', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                addMessage('ai', data.answer);
+            } else {
+                addMessage('ai', 'Error: ' + response.statusText);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            addMessage('ai', 'Sorry, there was an error processing your request. Please try again.');
+        } finally {
+            isLoading = false;
+            submitBtn.disabled = false;
+            // Restore the original SVG icon for the submit button
+            submitBtn.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    `;
+            questionInput.disabled = false;
+        }
+    }
+
+    function addMessage(role, content, attachments = null) {
+        chatContainer.classList.remove('hidden');
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message message-${role}`;
+
+        let messageContent = `
+                <div class="message-header">${role === 'user' ? 'You' : 'AI Assistant'}:</div>
+                <div>${content.replace(/\n/g, '<br>')}</div>
+            `;
+
+        if (role === 'user' && attachments) {
+            let attachmentText = [];
+
+            if (attachments.pdfs && attachments.pdfs.length > 0) {
+                attachmentText.push(`${attachments.pdfs.length} PDF${attachments.pdfs.length > 1 ? 's' : ''}`);
+            }
+
+            if (attachments.urls && attachments.urls.length > 0) {
+                attachmentText.push(`${attachments.urls.length} URL${attachments.urls.length > 1 ? 's' : ''}`);
+            }
+
+            if (attachmentText.length > 0) {
+                messageContent += `
+                        <div class="message-attachments">
+                            ${attachmentText.join(' and ')} attached
+                        </div>
+                    `;
+            }
+        }
+
+        messageDiv.innerHTML = messageContent;
+        messagesContainer.appendChild(messageDiv);
+
+        // Scroll to bottom
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    // Initialize
+    updateUI();
+    updateSourceList();
+</script>
+{% endblock js %}
