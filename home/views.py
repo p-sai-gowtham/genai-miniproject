@@ -4,14 +4,12 @@ from django.views.decorators.csrf import csrf_exempt
 import pdfplumber
 import numpy as np
 import pytesseract
-import nltk
 import requests
 from bs4 import BeautifulSoup
 from io import BytesIO
 from urllib.parse import urlparse
 import faiss
 
-nltk.download("stopwords")
 from nltk.corpus import stopwords
 from sentence_transformers import SentenceTransformer
 
@@ -265,3 +263,10 @@ def chat_view(request):
         return JsonResponse({"answer": answer})
     else:
         return JsonResponse({"error": "Invalid request method"}, status=400)
+
+def clear_db_data(request):
+    print(VECTOR_DB.index.ntotal, VECTOR_DB.metadata, VECTOR_DB.key_to_ids)
+    VECTOR_DB.index.reset()
+    VECTOR_DB.metadata.clear()
+    VECTOR_DB.key_to_ids.clear()
+    return JsonResponse({"status": "success", "message": "Database cleared"})

@@ -15,6 +15,7 @@
         <div class="input-tab active" data-tab="pdf-tab">PDF Upload</div>
         <div class="input-tab" data-tab="url-tab">URL Input</div>
         <div class="input-tab" data-tab="both-tab">Both</div>
+        <button onclick="ClearData();" class="btn" style="position:relative; left:500px;">Clear Data</button>
     </div>
 
     <div id="pdf-tab" class="tab-content active">
@@ -549,5 +550,9 @@
 
     updateUI();
     updateSourceList();
+
+    function ClearData(){
+        fetch('http://127.0.0.1:8000/clear_db_data')
+    }
 </script>
 {% endblock js %}
