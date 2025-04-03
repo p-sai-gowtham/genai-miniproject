@@ -11,16 +11,13 @@
 <div class="container">
     <h1>PDF & URL Chat Assistant</h1>
 
-    <!-- Input Type Tabs -->
     <div class="input-tabs">
         <div class="input-tab active" data-tab="pdf-tab">PDF Upload</div>
         <div class="input-tab" data-tab="url-tab">URL Input</div>
         <div class="input-tab" data-tab="both-tab">Both</div>
     </div>
 
-    <!-- PDF Upload Tab -->
     <div id="pdf-tab" class="tab-content active">
-        <!-- PDF Upload Area -->
         <div id="uploadArea" class="upload-area">
             <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                 stroke="currentColor">
@@ -34,7 +31,6 @@
         </div>
     </div>
 
-    <!-- URL Input Tab -->
     <div id="url-tab" class="tab-content">
         <div class="url-container">
             <h2>Enter URLs</h2>
@@ -46,9 +42,7 @@
         </div>
     </div>
 
-    <!-- Both Tab -->
     <div id="both-tab" class="tab-content">
-        <!-- PDF Upload Area -->
         <div id="uploadAreaBoth" class="upload-area">
             <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                 stroke="currentColor">
@@ -61,7 +55,6 @@
             <input type="file" id="fileInputBoth" accept="application/pdf" multiple class="hidden">
         </div>
 
-        <!-- URL Input -->
         <div class="url-container">
             <h2>Enter URLs</h2>
             <form id="urlFormBoth" class="url-form">
@@ -72,13 +65,11 @@
         </div>
     </div>
 
-    <!-- Source Summary -->
     <div id="sourceContainer" class="hidden" style="margin-bottom: 2rem;">
         <h2>Your Sources</h2>
         <div class="source-list" id="sourceList"></div>
     </div>
 
-    <!-- PDF List and Viewer -->
     <div id="pdfContainer" class="pdf-container hidden">
         <div class="pdf-header">
             <h2>Uploaded PDFs</h2>
@@ -90,13 +81,11 @@
         <iframe id="pdfViewer" class="pdf-viewer"></iframe>
     </div>
 
-    <!-- Chat Messages -->
     <div id="chatContainer" class="chat-container hidden">
         <h2>Conversation</h2>
         <div id="messagesContainer"></div>
     </div>
 
-    <!-- Input Form -->
     <form id="questionForm" class="input-form">
         <input type="text" id="questionInput" class="input-field"
             placeholder="Ask a question about your PDFs and URLs..." disabled>
@@ -114,7 +103,6 @@
 
 {% block js %}
 <script>
-    // DOM Elemen
     const inputTabs = document.querySelectorAll('.input-tab');
     const tabContents = document.querySelectorAll('.tab-content');
 
@@ -150,31 +138,25 @@
     const submitBtn = document.getElementById('submitBtn');
     const inputHint = document.getElementById('inputHint');
 
-    // State
     let pdfs = [];
     let urls = [];
     let activePdf = null;
     let isLoading = false;
 
-    // Event Listeners for Tabs
     inputTabs.forEach(tab => {
         tab.addEventListener('click', () => {
-            // Remove active class from all tabs and contents
             inputTabs.forEach(t => t.classList.remove('active'));
             tabContents.forEach(c => c.classList.remove('active'));
 
-            // Add active class to clicked tab and corresponding content
             tab.classList.add('active');
             const tabId = tab.getAttribute('data-tab');
             document.getElementById(tabId).classList.add('active');
         });
     });
 
-    // Event Listeners for PDF Upload
     uploadBtn.addEventListener('click', () => fileInput.click());
     uploadBtnBoth.addEventListener('click', () => fileInputBoth.click());
     addMoreBtn.addEventListener('click', () => {
-        // Determine which file input to use based on active tab
         const activeTab = document.querySelector('.input-tab.active').getAttribute('data-tab');
         if (activeTab === 'pdf-tab') {
             fileInput.click();
@@ -194,14 +176,11 @@
     fileInput.addEventListener('change', handleFileChange);
     fileInputBoth.addEventListener('change', handleFileChange);
 
-    // Event Listeners for URL Input
     urlForm.addEventListener('submit', handleUrlSubmit);
     urlFormBoth.addEventListener('submit', handleUrlSubmit);
 
-    // Event Listener for Question Form
     questionForm.addEventListener('submit', handleSubmit);
 
-    // Functions for Tabs
     function setActiveTab(tabId) {
         inputTabs.forEach(tab => {
             if (tab.getAttribute('data-tab') === tabId) {
@@ -220,7 +199,6 @@
         });
     }
 
-    // Functions for PDF Upload
     function handleDragOver(e) {
         e.preventDefault();
         e.currentTarget.style.backgroundColor = '#f3f4f6';
@@ -267,11 +245,9 @@
         }
     }
 
-    // Functions for URL Input
     function handleUrlSubmit(e) {
         e.preventDefault();
 
-        // Determine which input to use based on the form that was submitted
         const input = e.target === urlForm ? urlInput : urlInputBoth;
 
         const url = input.value.trim();
@@ -309,16 +285,13 @@
     }
 
     function renderUrlLists() {
-        // Clear both URL lists
         urlList.innerHTML = '';
         urlListBoth.innerHTML = '';
 
-        // Render URLs in both lists
         urls.forEach(url => {
             const urlItem = createUrlItem(url);
             const urlItemClone = urlItem.cloneNode(true);
 
-            // Add event listener to the remove button in both lists
             urlItem.querySelector('.remove-btn').addEventListener('click', () => removeUrl(url));
             urlItemClone.querySelector('.remove-btn').addEventListener('click', () => removeUrl(url));
 
@@ -348,7 +321,6 @@
         return urlItem;
     }
 
-    // Functions for PDF Viewer
     function updateUI() {
         const hasContent = pdfs.length > 0 || urls.length > 0;
 
@@ -441,7 +413,6 @@
             pdfTabs.appendChild(tab);
         });
 
-        // Add event listeners to remove buttons
         document.querySelectorAll('.remove-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -481,14 +452,12 @@
     async function handleSubmit(e) {
         e.preventDefault();
 
-        // Only proceed if there is at least one PDF or URL and a non-empty question.
         if ((pdfs.length === 0 && urls.length === 0) || !questionInput.value.trim() || isLoading) {
             return;
         }
 
         const question = questionInput.value.trim();
 
-        // Create a message with attachments info (for UI purposes)
         const attachments = {
             pdfs: pdfs.map(pdf => pdf.name),
             urls: urls
@@ -496,28 +465,22 @@
 
         addMessage('user', question, attachments);
 
-        // Reset the question input and update UI state
         questionInput.value = '';
         isLoading = true;
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<div class="loading"></div>';
         questionInput.disabled = true;
 
-        // Create FormData to send PDFs, URLs, and question to the backend
         const formData = new FormData();
         formData.append("question", question);
 
-        // Append each PDF file with a unique key
         pdfs.forEach((pdf, index) => {
             formData.append(`pdf_${index}`, pdf, pdf.name);
         });
 
-        // Append each URL as text with a unique key
         urls.forEach((url, index) => {
             formData.append(`url_${index}`, url);
         });
-
-        // Get CSRF token for Django
 
         try {
             const response = await fetch('http://127.0.0.1:8000/', {
@@ -537,7 +500,6 @@
         } finally {
             isLoading = false;
             submitBtn.disabled = false;
-            // Restore the original SVG icon for the submit button
             submitBtn.innerHTML = `
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -582,12 +544,9 @@
 
         messageDiv.innerHTML = messageContent;
         messagesContainer.appendChild(messageDiv);
-
-        // Scroll to bottom
         window.scrollTo(0, document.body.scrollHeight);
     }
 
-    // Initialize
     updateUI();
     updateSourceList();
 </script>

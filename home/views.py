@@ -1,7 +1,6 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from decouple import config
 import pdfplumber
 import numpy as np
 import pytesseract
@@ -9,37 +8,27 @@ import nltk
 import requests
 from bs4 import BeautifulSoup
 from io import BytesIO
-from urllib.parse import urlparse, urljoin
+from urllib.parse import urlparse
 import faiss
-import os
-import time
 
-# Download stopwords (only once; cached on subsequent runs)
 nltk.download("stopwords")
 from nltk.corpus import stopwords
-
-# ------------------ INITIALIZE FREE EMBEDDING MODEL ------------------ #
 from sentence_transformers import SentenceTransformer
 
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-embedding_dimension = 384  # Dimension for all-MiniLM-L6-v2
+embedding_dimension = 384
 
-# ------------------ INITIALIZE FREE COMPLETION PIPELINE ------------------ #
 from transformers import pipeline
-
-# We'll use a text2text generation pipeline with FLAN-T5-base for generating answers.
 qa_pipeline = pipeline(
     "text2text-generation", model="google/flan-t5-base", max_length=200, temperature=0.7
 )
 
-
-# ------------------ FAISS VECTOR DATABASE CLASS ------------------ #
 class FAISSVectorDB:
     def __init__(self, dimension):
         self.dimension = dimension
         self.index = faiss.IndexFlatL2(dimension)
-        self.metadata = {}  # Maps vector id to metadata (text, document key, etc.)
-        self.key_to_ids = {}  # Maps a unique document key to a list of vector ids
+        self.metadata = {}
+        self.key_to_ids = {}
 
     def add_vectors(self, key, vectors, texts, extra_metadata=None):
         n = vectors.shape[0]
@@ -80,12 +69,9 @@ class FAISSVectorDB:
                 results.append((d, self.metadata[idx]["text"]))
         return results
 
-
-# Global FAISS vector database instance
 VECTOR_DB = FAISSVectorDB(dimension=embedding_dimension)
 
 
-# ------------------ HELPER FUNCTIONS ------------------ #
 def normalize_url(url):
     parsed_url = urlparse(url)
     return f"{parsed_url.scheme}://{parsed_url.netloc}{parsed_url.path}"
@@ -128,7 +114,6 @@ def extract_text_from_url(url):
 
 
 def create_chunks(text, chunk_size=50, overlap=10):
-    """Split the text into smaller chunks with chunk_size words and an overlap of overlap words."""
     words = text.split()
     chunks = []
     start = 0
@@ -147,12 +132,7 @@ def remove_stop_words(text):
 
 
 def get_embeddings(texts):
-    """
-    Batch request embeddings for a list of texts using SentenceTransformers.
-    Returns a list of embedding vectors.
-    """
     try:
-        # encoding returns a numpy array of shape (n_texts, dimension)
         embeddings = embedding_model.encode(texts, convert_to_numpy=True)
         return embeddings.tolist()  # convert to list of lists
     except Exception as e:
@@ -161,7 +141,6 @@ def get_embeddings(texts):
 
 
 def get_embedding(text):
-    """Get an embedding for a single text using batch embedding."""
     embeddings = get_embeddings([text])
     if embeddings and embeddings[0] is not None:
         return embeddings[0]
@@ -219,7 +198,6 @@ def process_url(url, max_chunks=20):
         return VECTOR_DB.get_chunks_by_key(key)
     text = extract_text_from_url(url)
     chunks = create_chunks(text, chunk_size=50, overlap=10)
-    # Limit the number of chunks per URL
     chunks = chunks[:max_chunks]
     cleaned_chunks = [remove_stop_words(chunk) for chunk in chunks if chunk.strip()]
     embeddings = get_embeddings(cleaned_chunks)
@@ -248,7 +226,6 @@ def process_url(url, max_chunks=20):
     return valid_texts
 
 
-# ------------------ DJANGO VIEW ------------------ #
 @csrf_exempt
 def chat_view(request):
     if request.method == "GET":
@@ -258,12 +235,10 @@ def chat_view(request):
         if not question:
             return JsonResponse({"error": "No question provided"}, status=400)
         all_chunks = []
-        # Process uploaded PDFs
         for key, file_obj in request.FILES.items():
             if file_obj.name.lower().endswith(".pdf"):
                 chunks = process_pdf(file_obj)
                 all_chunks.extend(chunks)
-        # Process URL inputs (all POST keys starting with "url_")
         for key, value in request.POST.items():
             if key.startswith("url_"):
                 url = value.strip()
@@ -283,8 +258,6 @@ def chat_view(request):
         context = "\n".join(top_chunks)
         prompt = f"Context:\n{context}\n\nQuestion: {question}\n\nAnswer:"
         try:
-            # Use the free generation pipeline to generate an answer.
-            # We use the qa_pipeline from transformers.
             completion = qa_pipeline(prompt)
             answer = completion[0]["generated_text"].strip()
         except Exception as e:

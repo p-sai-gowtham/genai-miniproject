@@ -6,9 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>RAG</title>
   <link rel="shortcut icon" type="image/png" href={% static "images/logos/favicon.png" %} />
-  <link rel="stylesheet" href={% static "css/styles.min.css" %} />
   <style>
-        /* Reset and base styles */
         * {
             margin: 0;
             padding: 0;
@@ -41,7 +39,6 @@
             color: #111827;
         }
 
-        /* Upload area */
         .upload-area {
             border: 2px dashed #d1d5db;
             border-radius: 0.5rem;
@@ -104,7 +101,6 @@
             background-color: #eff6ff;
         }
 
-        /* URL input */
         .url-container {
             margin-bottom: 2rem;
             padding: 1.5rem;
@@ -157,7 +153,6 @@
             gap: 0.5rem;
         }
 
-        /* PDF list and viewer */
         .pdf-container {
             margin-bottom: 2rem;
         }
@@ -216,7 +211,6 @@
             border-radius: 0.5rem;
         }
 
-        /* Chat section */
         .chat-container {
             margin-bottom: 2rem;
         }
@@ -247,7 +241,6 @@
             color: #6b7280;
         }
 
-        /* Input form */
         .input-form {
             position: sticky;
             bottom: 1rem;
@@ -283,7 +276,6 @@
             display: none;
         }
 
-        /* Loading indicator */
         .loading {
             display: inline-block;
             width: 1rem;
@@ -298,7 +290,6 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Tabs for input type */
         .input-tabs {
             display: flex;
             margin-bottom: 1.5rem;
@@ -329,7 +320,6 @@
             display: block;
         }
 
-        /* Badge */
         .badge {
             display: inline-flex;
             align-items: center;
@@ -355,7 +345,6 @@
             margin-left: 0.25rem;
         }
 
-        /* Source list */
         .source-list {
             display: flex;
             flex-wrap: wrap;
@@ -383,7 +372,6 @@
 </head>
 
 <body>
-  <!--  Body Wrapper -->
   
       <header class="app-header">
         <nav class="navbar navbar-expand-lg navbar-light">
@@ -391,7 +379,6 @@
         </nav>
       </header>
       
-      <!--  Header End -->
       {% for message in messages %}
       <div class="container-fluid p-0 m-0">
         <div class="alert {{ message.tags }} alert-dismissible m-0 text-center" role="alert" >
